@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Student Management</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <h2>Student Registration</h2>
+
+  <!-- ✅ Form with id and submit handler -->
+  <form id="studentForm">
+    <input id="name" placeholder="Name" />
+    <input id="fee" placeholder="Fee" />
+    <input id="result" placeholder="Result" />
+    <input id="usn" placeholder="USN" />
+    <input id="branch" placeholder="Branch" />
+    <button type="submit">Submit</button>
+  </form>
+
+  <h3>Search</h3>
+  <input id="search" placeholder="Search by name" />
+  <button onclick="searchStudent()">Search</button>
+
+  <h3>Student List</h3>
+  <table id="studentTable">
+    <thead>
+      <tr>
+        <th>ID</th><th>Name</th><th>Fee</th><th>Result</th><th>USN</th><th>Branch</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const API = "http://localhost/backend";
+
+    // ✅ Listen for form submission
+    document.getElementById('studentForm').addEventListener('submit', function(e) {
+      e.preventDefault(); // prevent page reload
+
+      const data = {
+        name: document.getElementById('name').value,
+        fee: document.getElementById('fee').value,
+        result: document.getElementById('result').value,
+        usn: document.getElementById('usn').value,
+        branch: document.getElementById('branch').value
+      };
+
+      if (!validateInput(data)) return;
+
+      fetch(`${API}/add_student.php`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).then(() => {
+        clearForm();
+        fetchStudents(); // Update table
+      });
+    });
+
+    // ✅ Input validation
+    function validateInput(data) {
+      for (const key in data) {
+        if (!data[key].trim()) {
+          alert("Please fill all fields");
+          return false;
+        }
+      }
+      if (isNaN(data.fee)) {
+        alert("Fee must be a number");
+        return false;
+      }
+      return true;
+    }
+
+    function deleteStudent(id) {
+      fetch(`${API}/delete_student.php?id=${id}`).then(() => fetchStudents());
+    }
+
+    function searchStudent() {
+      const name = document.getElementById('search').value;
+      fetch(`${API}/search_student.php?name=${name}`)
+        .then(res => res.json())
+        .then(data => renderTable(data));
+    }
+
+    function renderTable(data) {
+      const tbody = document.querySelector('#studentTable tbody');
+      tbody.innerHTML = "";
+      data.forEach(s => {
+        const row = `<tr>
+          <td>${s.STU_ID}</td><td>${s.STU_NAME}</td><td>${s.STU_Fee_details}</td>
+          <td>${s.STU_Exam_result}</td><td>${s.STU_USN}</td><td>${s.STU_BRANCH}</td>
+          <td><button onclick="deleteStudent(${s.STU_ID})">Delete</button></td>
+        </tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+
+    function clearForm() {
+      ['name', 'fee', 'result', 'usn', 'branch'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+    }
+
+    fetchStudents(); // Load on page start
+  </script>
+</body>
+</html>
